@@ -34,7 +34,7 @@ export type Book = {
   author: string;
   isbn: string;
   category: string;
-  cover_image_url: string | null;
+  cover_image: string | null;
   available: boolean;
   created_at: string;
   updated_at: string;

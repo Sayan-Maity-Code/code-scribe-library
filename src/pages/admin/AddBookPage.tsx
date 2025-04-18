@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
@@ -75,14 +76,14 @@ export const AddBookPage = () => {
         console.log("Cover image uploaded, URL:", coverImageUrl);
       }
 
-      // Create the book with the image URL - using cover_image_url to match DB schema
+      // Create the book with the image URL - using cover_image to match DB schema
       return await bookApi.createBook({
         title: data.title,
         author: data.author,
         isbn: data.isbn,
         category: data.category,
         available: data.available,
-        cover_image_url: coverImageUrl,
+        cover_image: coverImageUrl,
       });
     },
     onSuccess: () => {

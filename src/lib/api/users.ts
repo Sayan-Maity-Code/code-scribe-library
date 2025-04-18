@@ -10,7 +10,7 @@ export const userApi = {
     }
     
     const response = await fetch(
-      `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-api/users`,
+      `https://robvrhglervyftgwdzlc.supabase.co/functions/v1/admin-api/users`,
       {
         method: "GET",
         headers: {
