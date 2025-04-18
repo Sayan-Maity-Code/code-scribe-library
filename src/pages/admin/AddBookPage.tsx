@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useMutation } from "@tanstack/react-query";
@@ -20,7 +19,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Textarea } from "@/components/ui/textarea";
 
 const formSchema = z.object({
   title: z.string().min(1, "Title is required"),
@@ -67,13 +65,17 @@ export const AddBookPage = () => {
   // Create book mutation
   const createMutation = useMutation({
     mutationFn: async (data: z.infer<typeof formSchema>) => {
+      console.log("Starting book creation with form data:", data);
+      
       // If there's a cover image, upload it first
       let coverImageUrl = null;
       if (data.cover_image && data.cover_image.length > 0) {
+        console.log("Uploading cover image...");
         coverImageUrl = await bookApi.uploadCoverImage(data.cover_image[0]);
+        console.log("Cover image uploaded, URL:", coverImageUrl);
       }
 
-      // Create the book with the image URL
+      // Create the book with the image URL - using cover_image_url to match DB schema
       return await bookApi.createBook({
         title: data.title,
         author: data.author,
@@ -91,6 +93,7 @@ export const AddBookPage = () => {
       navigate("/admin/books");
     },
     onError: (error) => {
+      console.error("Error in createMutation:", error);
       toast({
         title: "Error",
         description: `Failed to add book: ${(error as Error).message}`,
@@ -101,6 +104,7 @@ export const AddBookPage = () => {
   });
 
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
+    console.log("Form submitted with data:", data);
     setIsSubmitting(true);
     await createMutation.mutateAsync(data);
   };

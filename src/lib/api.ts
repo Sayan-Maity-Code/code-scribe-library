@@ -44,12 +44,14 @@ export const bookApi = {
 
   // Create a new book
   createBook: async (book: Omit<Book, "id" | "created_at" | "updated_at">) => {
+    console.log("Creating book with data:", book);
     const { data, error } = await supabase
       .from("books")
-      .insert([{ ...book, created_at: new Date().toISOString(), updated_at: new Date().toISOString() }])
+      .insert([book])
       .select();
     
     if (error) {
+      console.error("Error creating book:", error);
       throw error;
     }
     
