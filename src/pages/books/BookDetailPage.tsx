@@ -111,9 +111,9 @@ export const BookDetailPage = () => {
       <div className="flex flex-col md:flex-row gap-8">
         <div className="md:w-1/3 lg:w-1/4">
           <div className="aspect-[2/3] w-full bg-muted rounded-lg overflow-hidden mb-4">
-            {book.cover_image_url ? (
+            {book.cover_image ? (
               <img
-                src={book.cover_image_url}
+                src={book.cover_image}
                 alt={book.title}
                 className="w-full h-full object-cover"
               />

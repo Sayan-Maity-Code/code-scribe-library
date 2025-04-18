@@ -69,7 +69,7 @@ export const EditBookPage = () => {
         available: book.available,
       });
       
-      setPreviewUrl(book.cover_image_url);
+      setPreviewUrl(book.cover_image);
     }
   }, [book, form]);
 
@@ -92,9 +92,9 @@ export const EditBookPage = () => {
       if (!id) throw new Error("No book ID provided");
       
       // If there's a new cover image, upload it first
-      let coverImageUrl = book?.cover_image_url || null;
+      let coverImage = book?.cover_image || null;
       if (data.cover_image && data.cover_image.length > 0) {
-        coverImageUrl = await bookApi.uploadCoverImage(data.cover_image[0]);
+        coverImage = await bookApi.uploadCoverImage(data.cover_image[0]);
       }
 
       // Update the book with the image URL
@@ -104,7 +104,7 @@ export const EditBookPage = () => {
         isbn: data.isbn,
         category: data.category,
         available: data.available,
-        cover_image_url: coverImageUrl,
+        cover_image: coverImage,
       });
     },
     onSuccess: () => {

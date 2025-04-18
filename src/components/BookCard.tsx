@@ -19,9 +19,9 @@ export const BookCard = ({ book, onClick, showAvailability = true }: BookCardPro
       onClick={onClick}
     >
       <div className="aspect-[2/3] w-full bg-muted relative">
-        {book.cover_image_url ? (
+        {book.cover_image ? (
           <img 
-            src={book.cover_image_url} 
+            src={book.cover_image} 
             alt={book.title}
             className="w-full h-full object-cover"
           />
