@@ -6,7 +6,6 @@ const SUPABASE_URL = "https://robvrhglervyftgwdzlc.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJvYnZyaGdsZXJ2eWZ0Z3dkemxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ5OTg4MDEsImV4cCI6MjA2MDU3NDgwMX0.PPvEg7dDqn5h0p2W1yLHbN9SuYLfpIwzU1BJSHmEQ3w";
 
 if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-  console.error('Supabase configuration is incomplete');
   throw new Error(`
     Supabase configuration is incomplete. 
     Please ensure Supabase URL and Anon Key are correctly configured.
