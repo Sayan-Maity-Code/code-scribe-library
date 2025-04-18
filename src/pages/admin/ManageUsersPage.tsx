@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { userApi } from "@/lib/api";
 import { User } from "@/lib/supabase";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -20,37 +20,12 @@ export const ManageUsersPage = () => {
     const fetchUsers = async () => {
       try {
         setLoading(true);
-        console.log("Fetching users with admin permissions");
+        console.log("Fetching users via admin API");
         
-        // Our improved RLS policies should now allow this query for admin users
-        const { data, error: fetchError } = await supabase
-          .from('profiles')
-          .select('*');
+        const fetchedUsers = await userApi.getAllUsers();
         
-        if (fetchError) {
-          console.error("Fetch error:", fetchError);
-          throw fetchError;
-        }
-        
-        if (!data) {
-          console.error("No data returned");
-          throw new Error("No data returned from profiles query");
-        }
-        
-        console.log("Profiles data received:", data);
-        
-        // Transform profiles data to match User structure with safer null handling
-        const transformedUsers = data.map(profile => ({
-          id: profile.id,
-          email: profile.email || "No email",
-          user_metadata: {
-            role: profile.role || "member",
-            full_name: profile.email ? profile.email.split('@')[0] : "Unknown"
-          }
-        })) as User[];
-        
-        console.log("Transformed users:", transformedUsers);
-        setUsers(transformedUsers);
+        console.log("Users data received:", fetchedUsers);
+        setUsers(fetchedUsers);
         setError(null);
       } catch (err) {
         console.error("Error fetching users:", err);
@@ -144,4 +119,4 @@ export const ManageUsersPage = () => {
       </Card>
     </div>
   );
-};
+}
