@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS books (
   author TEXT NOT NULL,
   isbn TEXT NOT NULL,
   category TEXT NOT NULL,
-  cover_image_url TEXT,
+  cover_image TEXT,
   available BOOLEAN NOT NULL DEFAULT TRUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()

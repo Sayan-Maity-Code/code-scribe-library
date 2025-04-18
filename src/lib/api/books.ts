@@ -59,7 +59,7 @@ export const bookApi = {
   updateBook: async (id: string, book: Partial<Book>) => {
     const { data, error } = await supabase
       .from("books")
-      .update({ ...book, updated_at: new Date().toISOString() })
+      .update(book)
       .eq("id", id)
       .select();
     

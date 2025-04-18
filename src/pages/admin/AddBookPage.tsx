@@ -76,7 +76,7 @@ export const AddBookPage = () => {
         console.log("Cover image uploaded, URL:", coverImageUrl);
       }
 
-      // Create the book with the image URL - using cover_image to match DB schema
+      // Create the book with the image URL
       return await bookApi.createBook({
         title: data.title,
         author: data.author,

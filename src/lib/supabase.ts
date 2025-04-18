@@ -37,7 +37,7 @@ export type Book = {
   cover_image: string | null;
   available: boolean;
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
 };
 
 export type BorrowStatus = "requested" | "approved" | "denied" | "returned";
