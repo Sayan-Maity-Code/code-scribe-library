@@ -16,7 +16,9 @@ import {
 } from "@/components/ui/form";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useAuth } from "@/lib/auth";
+import { supabase } from "@/lib/supabase";
 
+// Create schema for form validation
 const formSchema = z.object({
   fullName: z.string().min(2, { message: "Name must be at least 2 characters" }),
   email: z.string().email({ message: "Please enter a valid email" }),
@@ -25,17 +27,43 @@ const formSchema = z.object({
   role: z.enum(["member", "admin"], {
     required_error: "Please select a role",
   }),
+  adminCode: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
-});
+}).refine(
+  async (data) => {
+    // If role is not admin, no need to validate admin code
+    if (data.role !== "admin") return true;
+    
+    // Check if admin code is provided and valid
+    if (!data.adminCode) return false;
+    
+    // Verify the admin code against database
+    const { data: adminCodeData, error } = await supabase
+      .from("admin_codes")
+      .select("*")
+      .eq("code", data.adminCode)
+      .eq("is_used", false)
+      .single();
+      
+    return !!adminCodeData && !error;
+  },
+  {
+    message: "Invalid admin code",
+    path: ["adminCode"],
+  }
+);
+
+type FormValues = z.infer<typeof formSchema>;
 
 export const Register = () => {
   const navigate = useNavigate();
   const { signUp } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [showAdminCode, setShowAdminCode] = useState(false);
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       fullName: "",
@@ -43,17 +71,43 @@ export const Register = () => {
       password: "",
       confirmPassword: "",
       role: "member",
+      adminCode: "",
     },
+    mode: "onBlur",
   });
+  
+  // Track role changes to show/hide admin code field
+  const watchRole = form.watch("role");
+  
+  // Show admin code field when role changes to admin
+  if (watchRole === "admin" && !showAdminCode) {
+    setShowAdminCode(true);
+  } else if (watchRole !== "admin" && showAdminCode) {
+    setShowAdminCode(false);
+  }
 
-  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async (values: FormValues) => {
     setIsLoading(true);
+    
+    // Register the user
     const { error } = await signUp(
       values.email, 
       values.password, 
       values.role, 
       values.fullName
     );
+    
+    // If admin and registration successful, mark the admin code as used
+    if (!error && values.role === "admin" && values.adminCode) {
+      await supabase
+        .from("admin_codes")
+        .update({ 
+          is_used: true,
+          used_at: new Date().toISOString(),
+        })
+        .eq("code", values.adminCode);
+    }
+    
     setIsLoading(false);
     
     if (!error) {
@@ -156,6 +210,22 @@ export const Register = () => {
               </FormItem>
             )}
           />
+          
+          {showAdminCode && (
+            <FormField
+              control={form.control}
+              name="adminCode"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Admin Code</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Enter admin code" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
           
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? "Signing up..." : "Sign Up"}
