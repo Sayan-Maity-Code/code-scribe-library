@@ -20,27 +20,37 @@ export const ManageUsersPage = () => {
     const fetchUsers = async () => {
       try {
         setLoading(true);
-        // Fetch profiles directly - our new RLS policy will now allow this for admin users
+        console.log("Fetching users with admin permissions");
+        
+        // Our improved RLS policies should now allow this query for admin users
         const { data, error: fetchError } = await supabase
           .from('profiles')
           .select('*');
         
-        if (fetchError) throw fetchError;
+        if (fetchError) {
+          console.error("Fetch error:", fetchError);
+          throw fetchError;
+        }
         
         if (!data) {
+          console.error("No data returned");
           throw new Error("No data returned from profiles query");
         }
         
-        // Transform profiles data to match User structure
-        setUsers(data.map(profile => ({
-          id: profile.id,
-          email: profile.email,
-          user_metadata: {
-            role: profile.role,
-            full_name: profile.email?.split('@')[0] || 'Unknown' // Fallback if full_name isn't available
-          }
-        })) as User[]);
+        console.log("Profiles data received:", data);
         
+        // Transform profiles data to match User structure with safer null handling
+        const transformedUsers = data.map(profile => ({
+          id: profile.id,
+          email: profile.email || "No email",
+          user_metadata: {
+            role: profile.role || "member",
+            full_name: profile.email ? profile.email.split('@')[0] : "Unknown"
+          }
+        })) as User[];
+        
+        console.log("Transformed users:", transformedUsers);
+        setUsers(transformedUsers);
         setError(null);
       } catch (err) {
         console.error("Error fetching users:", err);
@@ -55,9 +65,17 @@ export const ManageUsersPage = () => {
       }
     };
 
-    // Only fetch users if the current user is logged in
-    if (currentUser) {
+    // Only fetch users if the current user is logged in and is an admin
+    if (currentUser && currentUser.user_metadata?.role === 'admin') {
       fetchUsers();
+    } else if (currentUser && currentUser.user_metadata?.role !== 'admin') {
+      setError("You do not have permission to access this page");
+      toast({
+        title: "Access denied",
+        description: "You must be an admin to view this page",
+        variant: "destructive",
+      });
+      setLoading(false);
     }
   }, [toast, currentUser]);
 
