@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -17,8 +16,8 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useAuth } from "@/lib/auth";
 import { supabase } from "@/lib/supabase";
+import { useToast } from "@/hooks/use-toast";
 
-// Create schema for form validation
 const formSchema = z.object({
   fullName: z.string().min(2, { message: "Name must be at least 2 characters" }),
   email: z.string().email({ message: "Please enter a valid email" }),
@@ -31,38 +30,16 @@ const formSchema = z.object({
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords do not match",
   path: ["confirmPassword"],
-}).refine(
-  async (data) => {
-    // If role is not admin, no need to validate admin code
-    if (data.role !== "admin") return true;
-    
-    // Check if admin code is provided and valid
-    if (!data.adminCode) return false;
-    
-    // Verify the admin code against database
-    const { data: adminCodeData, error } = await supabase
-      .from("admin_codes")
-      .select("*")
-      .eq("code", data.adminCode)
-      .eq("is_used", false)
-      .single();
-      
-    return !!adminCodeData && !error;
-  },
-  {
-    message: "Invalid admin code",
-    path: ["adminCode"],
-  }
-);
+});
 
 type FormValues = z.infer<typeof formSchema>;
 
 export const Register = () => {
   const navigate = useNavigate();
   const { signUp } = useAuth();
+  const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showAdminCode, setShowAdminCode] = useState(false);
-  const [adminCodeError, setAdminCodeError] = useState<string | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -77,10 +54,8 @@ export const Register = () => {
     mode: "onBlur",
   });
   
-  // Track role changes to show/hide admin code field
   const watchRole = form.watch("role");
   
-  // Show admin code field when role changes to admin
   if (watchRole === "admin" && !showAdminCode) {
     setShowAdminCode(true);
   } else if (watchRole !== "admin" && showAdminCode) {
@@ -89,47 +64,73 @@ export const Register = () => {
 
   const onSubmit = async (values: FormValues) => {
     setIsLoading(true);
-    setAdminCodeError(null);
     
-    // If admin role, verify admin code separately (more reliable than zod async validation)
-    if (values.role === "admin" && values.adminCode) {
-      const { data: adminCodeData, error } = await supabase
-        .from("admin_codes")
-        .select("*")
-        .eq("code", values.adminCode)
-        .eq("is_used", false)
-        .single();
-      
-      if (error || !adminCodeData) {
-        setAdminCodeError("Invalid admin code or code has already been used");
-        setIsLoading(false);
-        return;
+    try {
+      // Verify admin code if registering as admin
+      if (values.role === "admin") {
+        if (!values.adminCode) {
+          toast({
+            title: "Admin code required",
+            description: "Please enter the admin code to register as an admin",
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        const { data: adminCodeData, error: adminCodeError } = await supabase
+          .from("admin_codes")
+          .select("*")
+          .eq("code", values.adminCode)
+          .eq("is_used", false)
+          .single();
+
+        if (adminCodeError || !adminCodeData) {
+          toast({
+            title: "Invalid admin code",
+            description: "The admin code is invalid or has already been used",
+            variant: "destructive",
+          });
+          setIsLoading(false);
+          return;
+        }
       }
-    }
-    
-    // Register the user
-    const { error } = await signUp(
-      values.email, 
-      values.password, 
-      values.role, 
-      values.fullName
-    );
-    
-    // If admin and registration successful, mark the admin code as used
-    if (!error && values.role === "admin" && values.adminCode) {
-      await supabase
-        .from("admin_codes")
-        .update({ 
-          is_used: true,
-          used_at: new Date().toISOString(),
-        })
-        .eq("code", values.adminCode);
-    }
-    
-    setIsLoading(false);
-    
-    if (!error) {
+      
+      // Register the user
+      const { error: signUpError } = await signUp(
+        values.email,
+        values.password,
+        values.role,
+        values.fullName
+      );
+
+      if (signUpError) throw signUpError;
+
+      // If registration successful and admin role, mark the code as used
+      if (values.role === "admin" && values.adminCode) {
+        await supabase
+          .from("admin_codes")
+          .update({
+            is_used: true,
+            used_at: new Date().toISOString(),
+          })
+          .eq("code", values.adminCode);
+      }
+
+      toast({
+        title: "Registration successful!",
+        description: "Please check your email to verify your account.",
+      });
+      
       navigate("/login");
+    } catch (error) {
+      toast({
+        title: "Registration failed",
+        description: error.message || "An error occurred during registration",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -239,7 +240,6 @@ export const Register = () => {
                   <FormControl>
                     <Input placeholder="Enter admin code" {...field} />
                   </FormControl>
-                  {adminCodeError && <p className="text-sm font-medium text-destructive">{adminCodeError}</p>}
                   <FormMessage />
                 </FormItem>
               )}
