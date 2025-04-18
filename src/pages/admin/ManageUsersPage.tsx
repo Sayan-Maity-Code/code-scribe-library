@@ -1,33 +1,56 @@
+
 import { useState, useEffect } from "react";
-import { userApi } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 import { User } from "@/lib/supabase";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/hooks/use-toast";
 
 export const ManageUsersPage = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         setLoading(true);
-        const fetchedUsers = await userApi.getAllUsers();
-        setUsers(fetchedUsers as User[]);
+        // Instead of using admin.listUsers(), we'll query the profiles table
+        // which is synced with auth.users through triggers
+        const { data, error: fetchError } = await supabase
+          .from('profiles')
+          .select('*');
+        
+        if (fetchError) throw fetchError;
+        
+        setUsers(data.map(profile => ({
+          id: profile.id,
+          email: profile.email,
+          user_metadata: {
+            role: profile.role,
+            full_name: profile.email.split('@')[0] // Fallback if full_name isn't available
+          }
+        })) as User[]);
+        
         setError(null);
       } catch (err) {
         console.error("Error fetching users:", err);
         setError("Failed to load users. Please try again later.");
+        toast({
+          title: "Error fetching users",
+          description: "Could not retrieve user data. Please try again later.",
+          variant: "destructive",
+        });
       } finally {
         setLoading(false);
       }
     };
 
     fetchUsers();
-  }, []);
+  }, [toast]);
 
   return (
     <div className="space-y-6">
