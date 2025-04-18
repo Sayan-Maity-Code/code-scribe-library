@@ -21,13 +21,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Check active session and set the user
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user as User || null);
+      setUser(session?.user ? session.user as unknown as User : null);
       setIsLoading(false);
     });
 
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_, session) => {
-      setUser(session?.user as User || null);
+      setUser(session?.user ? session.user as unknown as User : null);
       setIsLoading(false);
     });
 
