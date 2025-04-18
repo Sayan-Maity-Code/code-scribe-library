@@ -1,12 +1,21 @@
 
 import { createClient } from "@supabase/supabase-js";
 
-// Supabase setup
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Supabase setup with fallback for development
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error("Missing Supabase environment variables");
+  console.error('Missing Supabase environment variables');
+  // Add more informative error handling
+  throw new Error(`
+    Supabase configuration is incomplete. 
+    Please ensure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set in your environment.
+    
+    If you're using Lovable:
+    1. Click on the Supabase integration button
+    2. Ensure all environment variables are correctly configured
+  `);
 }
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
