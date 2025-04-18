@@ -1,16 +1,15 @@
 
 import { createClient } from "@supabase/supabase-js";
 
-// Supabase setup with fallback for development
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+// Hardcoded Supabase configuration using project details
+const SUPABASE_URL = "https://robvrhglervyftgwdzlc.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJvYnZyaGdsZXJ2eWZ0Z3dkemxjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDQ5OTg4MDEsImV4cCI6MjA2MDU3NDgwMX0.PPvEg7dDqn5h0p2W1yLHbN9SuYLfpIwzU1BJSHmEQ3w";
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Missing Supabase environment variables');
-  // Add more informative error handling
+if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+  console.error('Supabase configuration is incomplete');
   throw new Error(`
     Supabase configuration is incomplete. 
-    Please ensure VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY are set in your environment.
+    Please ensure Supabase URL and Anon Key are correctly configured.
     
     If you're using Lovable:
     1. Click on the Supabase integration button
@@ -18,7 +17,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
   `);
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // Define database types
 export type User = {
