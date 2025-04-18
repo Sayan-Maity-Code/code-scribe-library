@@ -7,31 +7,37 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/lib/auth";
 
 export const ManageUsersPage = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
+  const { user: currentUser } = useAuth();
 
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         setLoading(true);
-        // Instead of using admin.listUsers(), we'll query the profiles table
-        // which is synced with auth.users through triggers
+        // Fetch profiles directly - our new RLS policy will now allow this for admin users
         const { data, error: fetchError } = await supabase
           .from('profiles')
           .select('*');
         
         if (fetchError) throw fetchError;
         
+        if (!data) {
+          throw new Error("No data returned from profiles query");
+        }
+        
+        // Transform profiles data to match User structure
         setUsers(data.map(profile => ({
           id: profile.id,
           email: profile.email,
           user_metadata: {
             role: profile.role,
-            full_name: profile.email.split('@')[0] // Fallback if full_name isn't available
+            full_name: profile.email?.split('@')[0] || 'Unknown' // Fallback if full_name isn't available
           }
         })) as User[]);
         
@@ -41,7 +47,7 @@ export const ManageUsersPage = () => {
         setError("Failed to load users. Please try again later.");
         toast({
           title: "Error fetching users",
-          description: "Could not retrieve user data. Please try again later.",
+          description: `Could not retrieve user data: ${(err as Error).message}`,
           variant: "destructive",
         });
       } finally {
@@ -49,8 +55,11 @@ export const ManageUsersPage = () => {
       }
     };
 
-    fetchUsers();
-  }, [toast]);
+    // Only fetch users if the current user is logged in
+    if (currentUser) {
+      fetchUsers();
+    }
+  }, [toast, currentUser]);
 
   return (
     <div className="space-y-6">
