@@ -62,6 +62,7 @@ export const Register = () => {
   const { signUp } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [showAdminCode, setShowAdminCode] = useState(false);
+  const [adminCodeError, setAdminCodeError] = useState<string | null>(null);
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -88,6 +89,23 @@ export const Register = () => {
 
   const onSubmit = async (values: FormValues) => {
     setIsLoading(true);
+    setAdminCodeError(null);
+    
+    // If admin role, verify admin code separately (more reliable than zod async validation)
+    if (values.role === "admin" && values.adminCode) {
+      const { data: adminCodeData, error } = await supabase
+        .from("admin_codes")
+        .select("*")
+        .eq("code", values.adminCode)
+        .eq("is_used", false)
+        .single();
+      
+      if (error || !adminCodeData) {
+        setAdminCodeError("Invalid admin code or code has already been used");
+        setIsLoading(false);
+        return;
+      }
+    }
     
     // Register the user
     const { error } = await signUp(
@@ -221,6 +239,7 @@ export const Register = () => {
                   <FormControl>
                     <Input placeholder="Enter admin code" {...field} />
                   </FormControl>
+                  {adminCodeError && <p className="text-sm font-medium text-destructive">{adminCodeError}</p>}
                   <FormMessage />
                 </FormItem>
               )}
