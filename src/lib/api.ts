@@ -1,5 +1,4 @@
-
-import { supabase, Book, Borrow, BorrowStatus } from "./supabase";
+import { supabase, Book, Borrow, BorrowStatus, BorrowWithBook } from "./supabase";
 
 // Books API
 export const bookApi = {

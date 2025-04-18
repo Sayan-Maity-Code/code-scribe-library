@@ -90,7 +90,7 @@ export const BooksPage = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="">All Categories</SelectItem>
-              {categories?.map((cat) => (
+              {categories?.map((cat: string) => (
                 <SelectItem key={cat} value={cat}>
                   {cat}
                 </SelectItem>
